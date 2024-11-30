@@ -1,0 +1,13 @@
+.App {
+  font-family: sans-serif;
+  text-align: center;
+}
+
+.App canvas {
+  height: 100vh;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
