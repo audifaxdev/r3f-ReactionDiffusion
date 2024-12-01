@@ -1,4 +1,5 @@
 import "./styles.css";
+import {useControls, button} from 'leva';
 import { useRef, useCallback, useState, forwardRef } from "react";
 import {
   Canvas,
@@ -16,6 +17,12 @@ import {
 } from "@react-three/drei";
 import * as THREE from "three";
 import {Clock} from 'three';
+import {TextGeometry as BMFTextGeometry} from "three-bmfont-text-es/";
+
+// const size = {
+//   width: window.innerWidth,
+//   height: window.innerHeight
+// }
 
 const OffScreenMaterial = shaderMaterial(
   {
@@ -44,13 +51,13 @@ const OffScreenMaterial = shaderMaterial(
     uniform vec2 res;//The width and height of our screen
     uniform sampler2D bufferTexture;//Our input texture
     uniform sampler2D debugUVTxt;
-    uniform vec3 smokeSource;//The x,y are the posiiton. The z is the power/density
     varying vec2 vUv;
     
     const vec2 DiffusionRate = vec2(1.0, 0.5);
-    const float KillRate = 0.062;
-    const float FeedRate = 0.0545;
+    const float KillRate = 0.05833;
+    const float FeedRate = 0.03457;
     const float Speed = 40.0;
+    
     vec2 center = vec2(0.5, 0.5);
     float radius = .25;
     const float thickness = .015;
@@ -61,7 +68,7 @@ const OffScreenMaterial = shaderMaterial(
     {
         vec3 iResolution = vec3(res, 2.);
     
-        vec2 pixelSize = vec2(2.) / res;
+        vec2 pixelSize = vec2(.5) / res;
         
         // with diagonals.
         return (texture(bufferTexture, uv + vec2(pixelSize.x, 0.0)).xy +
@@ -81,13 +88,15 @@ const OffScreenMaterial = shaderMaterial(
       vec3 iResolution = vec3(res, 2.);
       vec2 fragCoord = gl_FragCoord.xy;
       vec2 uv = vUv;
-    
+      // gl_FragColor = vec4(vec2(vUv), 0.0, 1.0);
+      // return;
+  
       if (iTime < 0.1) {
-        vec2 toMid = (res * 0.5 - fragCoord) / res.y;
-        toMid += sin(atan(toMid.x, toMid.y)*20.0) * 0.01; // Wobble circle a bit to get the desired effects faster.
+        vec2 toMid = (res - fragCoord) / res.y;
+        toMid += sin(atan(toMid.x, toMid.y)*20.0) * 0.02; // Wobble circle a bit to get the desired effects faster.
         float midDistSq = dot(toMid, toMid);
         float initVal = pow(sin(midDistSq * 40.0) * 0.5 + 0.5, 5.0);
-        
+
         gl_FragColor = vec4(1.0, initVal, 0.0, 1.0);
         return;
       }
@@ -116,46 +125,57 @@ const OffScreenMaterial = shaderMaterial(
 extend({ OffScreenMaterial });
 
 const OffScreenScene = forwardRef(function OffScreenScene(props, ref) {
+  const { visible } = props;
   const { size } = useThree();
   const offscreenMat = useRef(null);
   const debugUVTxt =  useTexture("/uvdebugtiles.png");
   const clock = new Clock();
-
-
+  clock.stop();
   useFrame(() => {
-    if (!clock.running) {
+/*    if (!clock.running) {
       clock.start();
-    }
+    }*/
     if (offscreenMat.current) {
       // console.log('offscreenMat.current.uniforms', offscreenMat.current.uniforms)
       // console.log('offscreenMat.current.uniforms', {
       //   time: offscreenMat.current.uniforms.iTime.value,
       //   delta: offscreenMat.current.uniforms.iTimeDelta.value
-      // })
+      // });
       offscreenMat.current.uniforms.iTimeDelta.value = clock.getDelta();
       offscreenMat.current.uniforms.iTime.value = clock.getElapsedTime();
     }
   });
 
+  const {} = useControls({
+    Start: button(() => {
+      clock.start();
+    }),
+    Stop: button(() => {
+      clock.stop();
+    }),
+  }, [clock]);
+
+  console.log({size})
+
   return (
-    <group>
-      <mesh ref={ref}>
+    <group visible={visible}>
+      <mesh
+        position={[0, 0, 0]}
+        ref={ref}>
         <planeGeometry args={[size.width, size.height]} />
         <offScreenMaterial
           debugUVTxt={debugUVTxt}
           ref={offscreenMat}
           bufferTexture={props.map}
-          res={new THREE.Vector2(size.width, size.height)}
-          smokeSource={new THREE.Vector3(0, 0, 0)}
+          res={new THREE.Vector2(size.width/2, size.height/2)}
         />
       </mesh>
-      <gridHelper />
     </group>
   );
 });
 
 const Plane = () => {
-  const { scene, size, camera } = useThree();
+  const { scene, camera, size } = useThree();
   const offScreen = useRef();
   const onScreen = useRef();
 
@@ -203,9 +223,6 @@ const Plane = () => {
     offScreen.current.material.uniforms.smokeSource.value.z = 0.1;
   }, []);
 
-
-  console.log({camera, size})
-
   const aspecRatio = size.width / size.height;
   const invAspecRatio = 1/aspecRatio;
   const distance = 1;
@@ -213,7 +230,6 @@ const Plane = () => {
   const planeHeight = 1;
   const fov = 2 * Math.atan((planeHeight / 2) / distance) * (180 / Math.PI);
 
-  console.log({fov})
   return (
     <>
       <PerspectiveCamera
@@ -225,23 +241,22 @@ const Plane = () => {
         far={1000}
       />
       <mesh
+        visible={true}
         ref={onScreen}
         onPointerMove={onPointerMove}
         onPointerDown={onMouseDown}
         onPointerUp={onMouseUp}
       >
         <planeGeometry args={[size.width/size.height, 1, 1, 1]} />
-        <meshBasicMaterial side={THREE.DoubleSide} map={onScreenFBOTexture} />
+        <meshBasicMaterial side={THREE.DoubleSide} map={offScreenFBOTexture} />
       </mesh>
-
-      <gridHelper />
 
       {createPortal(
         <>
-          <OffScreenScene ref={offScreen} map={offScreenFBOTexture.texture} />
+          <OffScreenScene visible={true} ref={offScreen} map={offScreenFBOTexture.texture} />
           <OrthographicCamera
             makeDefault
-            position={[0, 0, 1]}
+            position={[0, 0, 10]}
             args={[
               -1, 1, 1, -1, 1, 1000
             ]}
@@ -249,7 +264,8 @@ const Plane = () => {
             zoom={1}
             ref={offScreenCameraRef}
           />
-        </>,
+        </>
+      ,
         offScreenScene
       )}
     </>
