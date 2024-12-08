@@ -1,30 +1,34 @@
 import "./styles.css";
-import React, { useRef, useCallback, useState, forwardRef } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {
   Canvas,
   useFrame,
   useThree,
-  createPortal,
+  createPortal, extend,
 } from "@react-three/fiber";
 
 import {
   OrthographicCamera,
   useFBO,
-  PerspectiveCamera,
+  PerspectiveCamera, RenderTexture,
 } from "@react-three/drei";
 import * as THREE from "three";
-import {LinearFilter, NearestFilter} from "three";
+import {LinearFilter, NearestFilter, Raycaster, ShaderMaterial, Uniform, Vector2, Vector3} from "three";
 import OffScreenScene from "./OffScreenScene";
 import TextScene from "./TextFx";
-// import {Bloom, DepthOfField, EffectComposer, Noise, Vignette} from "@react-three/postprocessing";
+import AfterFx from "./AfterFx";
 
 const pxRatio = window.devicePixelRatio;
+
+extend({AfterFx})
 
 const Plane = () => {
   const {scene, camera, size} = useThree();
   const textSceneRef = useRef();
   const offScreen = useRef();
   const onScreen = useRef();
+  const afterFxRef = useRef();
+  const [txtFrame, setTextFrame] = useState();
 
   const realWidth = size.width*pxRatio;
   const realHeight = size.height*pxRatio;
@@ -39,13 +43,9 @@ const Plane = () => {
     magFilter: NearestFilter
   });
 
-  const textFBOTexture = useFBO(realWidth, realHeight, {
-    minFilter: LinearFilter,
-    magFilter: NearestFilter
-  });
 
   const [offScreenScene] = useState(() => new THREE.Scene());
-  const [textScene] = useState(() => new THREE.Scene());
+  // const [textScene] = useState(() => new THREE.Scene());
 
   const offScreenCameraRef = useRef(null);
   const textSceneCameraRef = useRef(null);
@@ -54,10 +54,6 @@ const Plane = () => {
   let textureB = onScreenFBOTexture;
 
   useFrame(({ gl, camera }) => {
-    //render text msdf
-    gl.setRenderTarget(textFBOTexture);
-    gl.render(textScene, textSceneCameraRef.current);
-
     //render target texture
     gl.setRenderTarget(textureB);
     gl.render(offScreenScene, offScreenCameraRef.current);
@@ -79,6 +75,21 @@ const Plane = () => {
 
   const planeHeight = 1;
   const fov = 2 * Math.atan((planeHeight / 2) / distance) * (180 / Math.PI);
+  const raycaster = new Raycaster();
+  const pointer = new Vector2();
+
+  window.addEventListener('pointermove', (e) => {
+    pointer.x = ( e.clientX / window.innerWidth ) * 2 - 1;
+    pointer.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
+    if (afterFxRef.current) {
+      camera.updateMatrixWorld();
+      raycaster.setFromCamera(pointer, camera);
+      const intersects = raycaster.intersectObjects( scene.children, false );
+      if (intersects.length) {
+        afterFxRef.current.uniforms.mouseC.value = intersects[0].uv;
+      }
+    }
+  });
 
   return (
     <>
@@ -95,12 +106,13 @@ const Plane = () => {
         ref={onScreen}
       >
         <planeGeometry args={[size.width/size.height, 1, 1, 1]} />
-        <meshBasicMaterial side={THREE.DoubleSide} map={offScreenFBOTexture} />
+        <afterFx viewport={new Vector2(realWidth, realHeight)} ref={afterFxRef} side={THREE.DoubleSide} txtTexture={txtFrame} bufferTexture={onScreenFBOTexture.texture} />
+        {/*<meshBasicMaterial side={THREE.DoubleSide} map={onScreenFBOTexture} />*/}
       </mesh>
 
       {createPortal(
         <>
-          <OffScreenScene visible={true} ref={offScreen} map={offScreenFBOTexture.texture} text={textFBOTexture.texture}/>
+          <OffScreenScene visible={true} ref={offScreen} map={offScreenFBOTexture.texture} text={txtFrame}/>
           <OrthographicCamera
             makeDefault
             position={[0, 0, 10]}
@@ -116,14 +128,8 @@ const Plane = () => {
         offScreenScene
       )}
 
-      {createPortal(
+      <RenderTexture frames={1} onUpdate={frame => setTimeout(() => setTextFrame(frame), [])}>
         <>
-          {/*<EffectComposer>*/}
-          {/*  <DepthOfField focusDistance={0} focalLength={0.02} bokehScale={2} height={480} />*/}
-          {/*  <Bloom luminanceThreshold={0} luminanceSmoothing={0.9} height={300} />*/}
-          {/*  <Noise opacity={0.02} />*/}
-          {/*  <Vignette eskil={false} offset={0.1} darkness={1.1} />*/}
-          {/*</EffectComposer>*/}
           <TextScene visible={true} ref={textSceneRef} />
           <OrthographicCamera
             makeDefault
@@ -136,9 +142,7 @@ const Plane = () => {
             ref={textSceneCameraRef}
           />
         </>
-        ,
-        textScene
-      )}
+      </RenderTexture>
     </>
   );
 };

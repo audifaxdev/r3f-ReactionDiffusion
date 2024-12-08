@@ -13,7 +13,6 @@ const OffScreenScene = forwardRef((props, ref) => {
   const { visible } = props;
   const { size } = useThree();
   const offscreenMat = useRef(null);
-  const [text, setText] = useState('AU');
   const debugUVTxt =  useTexture("/uvdebugtiles.png");
   const msdfMap = useTexture("./manifold-msdf.png");
   const bmFTextStableRef = useRef(null);

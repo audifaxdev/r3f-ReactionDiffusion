@@ -10,12 +10,13 @@
   "dependencies": {
     "@react-three/drei": "9.80.1",
     "@react-three/fiber": "8.13.6",
+    "leva": "^0.9.35",
     "loader-utils": "3.2.1",
+    "postprocessing": "^6.36.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-scripts": "5.0.1",
-    "three": "0.155.0",
-    "leva": "^0.9.35",
+    "three": "^0.157.0",
     "three-bmfont-text-es": "file:../../IdeaProjects/three-bmfont-text/three-bmfont-text-es-3.0.0.tgz"
   },
   "devDependencies": {

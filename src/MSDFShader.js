@@ -88,7 +88,7 @@ class MSDFShader extends RawShaderMaterial {
          }
 
         void main() {
-          float width = .1;
+          float width = .05;
           float lineProgress = .5;
           vec3 s = texture(map, vUv).rgb;
           float gr = texture(gradMap, vUv).r;
@@ -111,9 +111,9 @@ class MSDFShader extends RawShaderMaterial {
           // float finalAlpha = outline*inside*mask+fill*makeCircle() * 0.;
           
           // fragColor = vec4(outline, inside, 0.,  finalAlpha);
-          fragColor = vec4(vec3(fill, outline, 0.),  fill);
+          fragColor = vec4(vec3(fill, .5*outline, 0.),  fill);
           
-          // if (fragColor.a < .001) discard;
+          if (fragColor.a < .001) discard;
           // fragColor = vec4(vec3(inside), 1.);
           
           // fragColor = vec4(1., .5, 0., 1.);

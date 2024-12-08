@@ -31,8 +31,10 @@ const ReactionDiffusionShader = shaderMaterial(
     varying vec2 vUv;
     
     const vec2 DiffusionRate = vec2(1.0, 0.5);
-    const float KillRate = 0.05833;
-    const float FeedRate = 0.03457;
+    // const float KillRate = 0.05833;
+    // const float FeedRate = 0.03457;
+    const float KillRate = 0.062;
+const float FeedRate = 0.0545;
     const float Speed = 40.0;
     
     vec2 center = vec2(0.5, 0.5);
@@ -73,11 +75,11 @@ const ReactionDiffusionShader = shaderMaterial(
       vec4 txt = texture(textTexture, uv);
   
       if (iTime < .5) {
-        vec2 toMid = (res * .5  - fragCoord) / res.y;
-        toMid += sin(atan(toMid.x, toMid.y)*20.0) * 0.02; // Wobble circle a bit to get the desired effects faster.
-        float midDistSq = dot(toMid, toMid);
-        float initVal = pow(sin(midDistSq * 40.0) * 0.5 + 0.5, 5.0);
-        gl_FragColor = vec4(1.0, initVal, 0.0, 1.0);
+        // vec2 toMid = (res * .5  - fragCoord) / res.y;
+        // toMid += sin(atan(toMid.x, toMid.y)*20.0) * 0.02; // Wobble circle a bit to get the desired effects faster.
+        // float midDistSq = dot(toMid, toMid);
+        // float initVal = pow(sin(midDistSq * 40.0) * 0.5 + 0.5, 5.0);
+        // gl_FragColor = vec4(1.0, initVal, 0.0, 1.0);
         
         gl_FragColor = txt;
         // gl_FragColor = vec4(vec3(1.-text), 1.);
@@ -99,9 +101,16 @@ const ReactionDiffusionShader = shaderMaterial(
       // Apply using simple forward Euler.
       vec2 newValues = current + (diffusion + vec2(reactionU, reactionV)) * Speed * iTimeDelta;
       
-      // float outline = txt.g;
-      // gl_FragColor = max(vec4(outline), vec4(newValues, 0.0, 1.0));
+      float outline = txt.g;
+      float fill = txt.r;
+      // float r = max(newValues.g, txt.g);
+      // float g = max(newValues.g, txt.g);
+      // gl_FragColor = vec4(vec2(r, g), 0.0, 1.0);
+      
+      
       gl_FragColor = vec4(newValues, 0.0, 1.0);
+      
+      // gl_FragColor = max( vec4(fill, .5*fill, 0., 1.), vec4(newValues, 0.0, 1.0) );
       
     }
   `
