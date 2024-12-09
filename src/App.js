@@ -77,6 +77,7 @@ const Plane = () => {
   const fov = 2 * Math.atan((planeHeight / 2) / distance) * (180 / Math.PI);
   const raycaster = new Raycaster();
   const pointer = new Vector2();
+  const res = new Vector2(realWidth, realHeight);
 
   window.addEventListener('pointermove', (e) => {
     pointer.x = ( e.clientX / window.innerWidth ) * 2 - 1;
@@ -86,7 +87,7 @@ const Plane = () => {
       raycaster.setFromCamera(pointer, camera);
       const intersects = raycaster.intersectObjects( scene.children, false );
       if (intersects.length) {
-        afterFxRef.current.uniforms.mouseC.value = intersects[0].uv;
+        // afterFxRef.current.uniforms.mouseC.value = intersects[0].uv;
       }
     }
   });
@@ -106,7 +107,7 @@ const Plane = () => {
         ref={onScreen}
       >
         <planeGeometry args={[size.width/size.height, 1, 1, 1]} />
-        <afterFx viewport={new Vector2(realWidth, realHeight)} ref={afterFxRef} side={THREE.DoubleSide} txtTexture={txtFrame} bufferTexture={onScreenFBOTexture.texture} />
+        <afterFx ref={afterFxRef} side={THREE.DoubleSide} txtTexture={txtFrame} bufferTexture={onScreenFBOTexture.texture} />
         {/*<meshBasicMaterial side={THREE.DoubleSide} map={onScreenFBOTexture} />*/}
       </mesh>
 

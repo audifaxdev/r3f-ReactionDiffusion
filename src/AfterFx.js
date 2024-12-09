@@ -3,13 +3,14 @@ import * as THREE from "three";
 
 const AfterFx = shaderMaterial(
   {
-    viewport: { value: null },
+    res: { value: new THREE.Vector2(0, 0) },
     mouseC: { value: null },
     bufferTexture: { value: null },
     txtTexture: { value: null },
   },
   // vertex shader
   /*glsl*/ `
+    uniform vec2 res;
     varying vec2 vUv;
     void main () {
         vUv=uv;
@@ -18,19 +19,19 @@ const AfterFx = shaderMaterial(
     `,
   // fragment shader
   /*glsl*/ `
-    uniform sampler2D txtTexture;
-    uniform sampler2D bufferTexture;
-    uniform vec2 viewport;
+    uniform vec2 res;//The width and height of our screen
     uniform vec2 mouseC;
+    uniform sampler2D bufferTexture;
+    uniform sampler2D txtTexture;
     varying vec2 vUv;
     
     float makeCircle() {
       float devicePixelRatio = 2.;
-      vec2 viewportUV = gl_FragCoord.xy / viewport.xy;
-      float viewportAspect = viewport.x / viewport.y;
+      vec2 viewportUV = gl_FragCoord.xy / res.xy;
+      float viewportAspect = res.x / res.y;
 
       vec2 mousePoint = vec2(mouseC.x, mouseC.y);
-      float circleRadius = max(0.0, 100.*float(devicePixelRatio) / viewport.x);
+      float circleRadius = max(0.0, 100.*float(devicePixelRatio) / res.x);
 
       vec2 shapeUv = viewportUV - mousePoint;
       shapeUv /= vec2(1.0, viewportAspect);

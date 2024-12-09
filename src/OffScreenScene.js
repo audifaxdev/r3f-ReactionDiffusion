@@ -34,6 +34,7 @@ const OffScreenScene = forwardRef((props, ref) => {
       offscreenMat.current.uniforms.iTime.value = clock.getElapsedTime();
     }
   });
+
   const realWidth = size.width*pxRatio;
   const realHeight = size.height*pxRatio;
 

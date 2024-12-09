@@ -34,7 +34,7 @@ const ReactionDiffusionShader = shaderMaterial(
     // const float KillRate = 0.05833;
     // const float FeedRate = 0.03457;
     const float KillRate = 0.062;
-const float FeedRate = 0.0545;
+    const float FeedRate = 0.0545;
     const float Speed = 40.0;
     
     vec2 center = vec2(0.5, 0.5);
@@ -71,7 +71,6 @@ const float FeedRate = 0.0545;
       
       // gl_FragColor = vec4(vec2(vUv), 0.0, 1.0);
       // return;
-      
       vec4 txt = texture(textTexture, uv);
   
       if (iTime < .5) {
